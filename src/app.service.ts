@@ -69,7 +69,6 @@ export class AppService {
       .replace('<LOADOUT_NUM>', loadout.toString());
 
     const pageContent = await fetchRenderedPageContent(curLoadoutUrl);
-    console.log(pageContent);
     const $ = load(pageContent);
 
     const weapons: UserLoadoutDto = {
