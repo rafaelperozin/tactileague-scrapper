@@ -17,7 +17,7 @@ export class AppController {
 
   // User is the Panzer ID
   @Get('user/validate')
-  getValidateUser(@Body() user: string): Promise<UserInfoDto> {
+  getValidateUser(@Body() { user }: { user: string }): Promise<UserInfoDto> {
     return this.appService.getValidateUser(user);
   }
 }
