@@ -8,7 +8,7 @@ export class AppController {
 
   // Accepts 0, 1 or 2 as loadout
   // User is the Panzer ID
-  @Get('scrapper')
+  @Get('user/loadout')
   getUserLoadout(
     @Body() { user, loadout }: { user: string; loadout: number },
   ): Promise<UserLoadoutDto> {
