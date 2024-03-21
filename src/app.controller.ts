@@ -13,9 +13,9 @@ export class AppController {
   @Get('user/loadout')
   getUserLoadout(
     @Body() { user, loadout }: UserLodoutDto,
-  ): Promise<UserLoadoutDto> {
+  ): Promise<Job<UserLoadoutDto>> {
     console.log('user loadout request received: ', user, loadout);
-    return this.appService.getUserLoadout(user, loadout);
+    return this.appService.userLoadoutQueue(user, loadout);
   }
 
   // User is the Panzer ID

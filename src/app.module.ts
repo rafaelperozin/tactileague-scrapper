@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthMiddleware } from 'src/auth.middleware';
 import { BullModule } from '@nestjs/bull';
+import { ScrapeProcessor } from 'src/app.processor';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { BullModule } from '@nestjs/bull';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, ScrapeProcessor],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

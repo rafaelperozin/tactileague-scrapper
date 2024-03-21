@@ -14,8 +14,14 @@ export class AppService {
 
   async validateUserQueue(user: string): Promise<Job<UserInfoDto>> {
     const job: Job = await this.queue.add('validateUser', { user });
+
+    let jobResult;
+    this.queue.on('completed', (result) => {
+      jobResult = result.returnvalue;
+    });
+
     await job.finished();
-    return job.returnvalue;
+    return jobResult;
   }
 
   async userLoadoutQueue(
@@ -23,8 +29,15 @@ export class AppService {
     loadout: number,
   ): Promise<Job<UserLoadoutDto>> {
     const job: Job = await this.queue.add('userLoadout', { user, loadout });
+
+    let jobResult;
+    this.queue.on('completed', (result) => {
+      jobResult = result.returnvalue;
+    });
+
     await job.finished();
-    return job.returnvalue;
+    console.log('Job done!');
+    return jobResult;
   }
 
   async getValidateUser(user: string): Promise<UserInfoDto> {
@@ -103,6 +116,8 @@ export class AppService {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-extensions',
       ],
     });
 
