@@ -1,51 +1,32 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Job, Queue } from 'bull';
 import { load } from 'cheerio';
+import { InjectQueue } from '@nestjs/bull';
 import puppeteer from 'puppeteer';
 import { UserInfoDto, UserLoadoutDto } from 'src/app.model';
 
 const clubTacticoolUrl = `https://club.tacticool.game/user/<PANZER_ID>`;
 const clubTacticoolLoadoutUrl = `https://club.tacticool.game/user/<PANZER_ID>/preset/<LOADOUT_NUM>`;
 
-const fetchRenderedPageContent = async (url: string): Promise<string> => {
-  // Launch a new browser session.
-  const browser = await puppeteer.launch({
-    headless: true,
-    defaultViewport: null,
-    // executablePath:
-    //   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-    ],
-  });
-
-  // Open a new page.
-  const page = await browser.newPage();
-
-  // Navigate to the URL.
-  await page.goto(url, {
-    waitUntil: 'networkidle0', // Wait for the network to be idle (no ongoing requests).
-  });
-
-  // Wait for the content to render (you might need to adjust this selector).
-  await page.waitForSelector('#root');
-
-  // Retrieve the entire page content after JavaScript execution.
-  const content = await page.content();
-
-  // Close the browser session.
-  await browser.close();
-
-  return content;
-};
-
 @Injectable()
 export class AppService {
+  constructor(@InjectQueue('scrapeQueue') private queue: Queue) {}
+
+  async validateUserQueue(user: string): Promise<Job<UserInfoDto>> {
+    return await this.queue.add('validateUser', { user });
+  }
+
+  async userLoadoutQueue(
+    user: string,
+    loadout: number,
+  ): Promise<Job<UserLoadoutDto>> {
+    return await this.queue.add('userLoadout', { user, loadout });
+  }
+
   async getValidateUser(user: string): Promise<UserInfoDto> {
     const curUserUrl = clubTacticoolUrl.replace('<PANZER_ID>', user);
 
-    const pageContent = await fetchRenderedPageContent(curUserUrl);
+    const pageContent = await this.fetchRenderedPageContent(curUserUrl);
     const $ = load(pageContent);
 
     const userNickname = $('.c-user-info__nickname').first().text().trim();
@@ -68,7 +49,7 @@ export class AppService {
       .replace('<PANZER_ID>', user)
       .replace('<LOADOUT_NUM>', loadout.toString());
 
-    const pageContent = await fetchRenderedPageContent(curLoadoutUrl);
+    const pageContent = await this.fetchRenderedPageContent(curLoadoutUrl);
     const $ = load(pageContent);
 
     const weapons: UserLoadoutDto = {
@@ -104,5 +85,41 @@ export class AppService {
     });
 
     return weapons;
+  }
+
+  async fetchRenderedPageContent(url: string): Promise<string> {
+    // Launch a new browser session.
+    const browser = await puppeteer.launch({
+      headless: true,
+      defaultViewport: null,
+      // TODO: Comment out the executablePath before deploying.
+      // executablePath:
+      //   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', // only when running on local mac machine
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+      ],
+    });
+
+    // Open a new page.
+    const page = await browser.newPage();
+
+    // Navigate to the URL.
+    await page.goto(url, {
+      waitUntil: 'networkidle0', // Wait for the network to be idle (no ongoing requests).
+      timeout: 60000, // Set timeout to 60 seconds.
+    });
+
+    // Wait for the content to render (you might need to adjust this selector).
+    await page.waitForSelector('#root', { timeout: 60000 });
+
+    // Retrieve the entire page content after JavaScript execution.
+    const content = await page.content();
+
+    // Close the browser session.
+    await browser.close();
+
+    return content;
   }
 }
