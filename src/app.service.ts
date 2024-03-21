@@ -13,14 +13,18 @@ export class AppService {
   constructor(@InjectQueue('scrapeQueue') private queue: Queue) {}
 
   async validateUserQueue(user: string): Promise<Job<UserInfoDto>> {
-    return await this.queue.add('validateUser', { user });
+    const job: Job = await this.queue.add('validateUser', { user });
+    await job.finished();
+    return job.returnvalue;
   }
 
   async userLoadoutQueue(
     user: string,
     loadout: number,
   ): Promise<Job<UserLoadoutDto>> {
-    return await this.queue.add('userLoadout', { user, loadout });
+    const job: Job = await this.queue.add('userLoadout', { user, loadout });
+    await job.finished();
+    return job.returnvalue;
   }
 
   async getValidateUser(user: string): Promise<UserInfoDto> {
