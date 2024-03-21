@@ -10,7 +10,7 @@ import { ScrapeProcessor } from 'src/app.processor';
     BullModule.registerQueue({
       name: 'scrapeQueue',
       redis: {
-        host: 'localhost',
+        host: 'redis.railway.internal',
         port: 6379,
       },
     }),
